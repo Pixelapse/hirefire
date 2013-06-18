@@ -17,15 +17,18 @@ def setting(name, default=None):
 
 TOKEN = setting('HIREFIRE_TOKEN', 'development')
 PROCS = setting('HIREFIRE_PROCS', [])
+loaded_procs = []
 
 
-def hirefire_handlers(procs):
+def hirefire_handlers(procs_list):
     if not procs:
      raise Exception('The HireFire Tornado handler '
                      'requires at least one proc defined.')
 
     global PROCS
-    PROCS = procs
+    global loaded_procs
+    PROCS = procs_list
+    loaded_procs = procs.load_procs(*PROCS)
 
     test_path = r'^/hirefire/test/?$'
     info_path = r'^/hirefire/%s/info/?$' % re.escape(TOKEN)
@@ -59,7 +62,6 @@ class HireFireInfoHandler(tornado.web.RequestHandler):
     RequestHandler that implements the json response that contains the procs
     data.
     """
-    loaded_procs = procs.load_procs(*PROCS)
 
     def info(self):
         """
@@ -67,7 +69,8 @@ class HireFireInfoHandler(tornado.web.RequestHandler):
         of proc results.
         """
         data = []
-        for name, proc in self.loaded_procs.items():
+        global loaded_procs
+        for name, proc in loaded_procs.items():
             data.append({
                 'name': name,
                 'quantity': proc.quantity() or 'null',
